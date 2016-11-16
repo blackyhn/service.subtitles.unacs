@@ -11,6 +11,7 @@ import xbmcgui
 import xbmcplugin
 import unicodedata
 import simplejson as j
+import rarfile
 
 __addon__ = xbmcaddon.Addon()
 __author__     = __addon__.getAddonInfo('author')
@@ -134,7 +135,11 @@ def Download(id,url,filename, stack=False):
     subFile.write(sub['data'])
     subFile.close()
     xbmc.sleep(500)
-    xbmc.executebuiltin(('XBMC.Extract("%s","%s")' % (ff,__temp__,)).encode('utf-8'), True)
+    ## xbmc.executebuiltin(('XBMC.Extract("%s","%s")' % (ff,__temp__,)).encode('utf-8'), True)
+
+    opened_rar = rarfile.RarFile(ff)
+    opened_rar.extractall(__temp__)
+
     Notify('{0}'.format(sub['fname']),'load')
 
     dirs, files = xbmcvfs.listdir(__temp__)
