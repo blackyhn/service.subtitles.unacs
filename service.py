@@ -11,7 +11,9 @@ import xbmcgui
 import xbmcplugin
 import unicodedata
 import simplejson as j
+
 import rarfile
+import zipfile
 
 __addon__ = xbmcaddon.Addon()
 __author__     = __addon__.getAddonInfo('author')
@@ -113,6 +115,31 @@ def appendsubfiles(subtitle_list, basedir, files):
     elif IsSubFile(file):
       subtitle_list.append(file.encode('utf-8'))
 
+
+
+def fallBack(ff,__tem__):
+    slist = []
+    fext = os.path.splitext(ff)[1][1:].strip().lower()
+    
+    if fext == "rar":
+        opened_rar = rarfile.RarFile(ff)
+        opened_rar.extractall(__temp__)
+    else:
+        opened_zip = zipfile.ZipFile(ff, 'r')
+        opened_zip.extractall(__temp__)
+        opened_zip.close()
+
+    dirs, files = xbmcvfs.listdir(__temp__)
+    files.extend(dirs)
+    appendsubfiles(slist, __temp__, files)
+
+    if len(slist) >= 2:
+        subtitle_list = select_1(slist)
+    if xbmcvfs.exists(slist[0]):
+        return slist
+
+
+
 def Download(id,url,filename, stack=False):
   subtitle_list = []
   ## Cleanup temp dir, we recomend you download/unzip your subs in temp folder and
@@ -135,10 +162,7 @@ def Download(id,url,filename, stack=False):
     subFile.write(sub['data'])
     subFile.close()
     xbmc.sleep(500)
-    ## xbmc.executebuiltin(('XBMC.Extract("%s","%s")' % (ff,__temp__,)).encode('utf-8'), True)
-
-    opened_rar = rarfile.RarFile(ff)
-    opened_rar.extractall(__temp__)
+    xbmc.executebuiltin(('XBMC.Extract("%s","%s")' % (ff,__temp__,)).encode('utf-8'), True)
 
     Notify('{0}'.format(sub['fname']),'load')
 
@@ -146,10 +170,13 @@ def Download(id,url,filename, stack=False):
     files.extend(dirs)
     appendsubfiles(subtitle_list, __temp__, files)
 
-    if len(subtitle_list) >= 2:
-      subtitle_list = select_1(subtitle_list)
-    if xbmcvfs.exists(subtitle_list[0]):
-      return subtitle_list
+    if not subtitle_list:
+        return fallBack(ff,__temp__)
+    else:
+        if len(subtitle_list) >= 2:
+            subtitle_list = select_1(subtitle_list)
+        if xbmcvfs.exists(subtitle_list[0]):
+            return subtitle_list
 
   else:
     Notify('Error','downlod subtitles')
